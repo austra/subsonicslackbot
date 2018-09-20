@@ -13,29 +13,37 @@ Dotenv.load
 
 module SubsonicBot
   class Subsonic
-    def self.get_random_song
-      res = make_subsonic_call("getRandomSongs", "&size=1")
+    def self.parse_response(res, response_object)
+      asset = res["subsonic-response"][response_object[:call]][response_object[:type]].sample
+      { 
+        id:          asset["id"],
+        artist:      asset["artist"],
+        title:       asset["title"],
+        cover_art:   asset["coverArt"],
+        description: "#{asset["artist"].gsub(/[^0-9A-Za-z]/, '')}-#{asset["title"].gsub(/[^0-9A-Za-z]/, '')}"
+      }
+    end
 
-      song = res["subsonic-response"]["randomSongs"]["song"].first
-      description = "#{song["artist"].gsub(/[^0-9A-Za-z]/, '')}-#{song["title"].gsub(/[^0-9A-Za-z]/, '')}"
-      cover_art = song["coverArt"]
-
-      share_url = create_share(song["id"], description)
+    def self.play_on_jukebox(id)
       make_subsonic_call("jukeboxControl", "&action=clear")
-      make_subsonic_call("jukeboxControl", "&action=add&id=#{song["id"]}")
+      make_subsonic_call("jukeboxControl", "&action=add&id=#{id}")
       make_subsonic_call("jukeboxControl", "&action=start")
-      "#{song["artist"]} - #{song["title"]}\n#{share_url}"
+    end
+
+    def self.get_random_song
+      song = parse_response(make_subsonic_call("getRandomSongs", "&size=1"), {type: "song", call: "randomSongs"})
+      share_url = create_share(song[:id], song[:description])
+      play_on_jukebox(song[:id])
+
+      "#{song[:artist]} - #{song[:title]}\n#{share_url}"
     end
 
     def self.get_random_album
-      res = make_subsonic_call("getAlbumList", "&size=1&type=random")
+      album = parse_response(make_subsonic_call("getAlbumList", "&size=1&type=random"), {type: "album", call: "albumList"})
+      share_url = create_share(album[:id], album[:description])
+      play_on_jukebox(album[:id])
 
-      album = res["subsonic-response"]["albumList"]["album"].first
-      description = "#{album["artist"].gsub(/[^0-9A-Za-z]/, '')}-#{album["title"].gsub(/[^0-9A-Za-z]/, '')}"
-
-      share_url = create_share(album["id"], description)
-
-      "#{album["artist"]} - #{album["title"]}\n#{share_url}"
+      "#{album[:artist]} - #{album[:title]}\n#{share_url}"
     end
 
     def self.create_share(asset_id, asset_description)
@@ -43,6 +51,14 @@ module SubsonicBot
 
       share = res["subsonic-response"]["shares"]["share"].first
       share["url"]
+    end
+
+    def self.search(type, options)
+      asset = parse_response(make_subsonic_call("search", options), {type: "match", call: "searchResult"})
+      share_url = create_share(asset[:id], asset[:description])
+      play_on_jukebox(asset[:id])
+
+      "#{asset[:artist]} - #{asset[:title]}\n#{share_url}"
     end
 
     def self.make_subsonic_call(call_name, options=nil)
@@ -70,12 +86,28 @@ module SubsonicBot
       #return 401 unless request["token"] == ENV['SLACK_TOKEN']
     #end
 
-    def get_random_song
-      SubsonicBot::Subsonic.get_random_song
+    def get_song(search_string = nil)
+      if search_string != nil
+        SubsonicBot::Subsonic.search(:title, "&title=#{search_string}")
+      else
+        SubsonicBot::Subsonic.get_random_song
+      end
     end
 
-    def get_random_album
-      SubsonicBot::Subsonic.get_random_album
+    def get_album(search_string = nil)
+      if search_string != nil
+        SubsonicBot::Subsonic.search(:album, "&album=#{search_string}")
+      else
+        SubsonicBot::Subsonic.get_random_album
+      end
+    end
+
+    def get_artist(search_string = nil)
+      if search_string != nil
+        SubsonicBot::Subsonic.search(:artist, "&artist=#{search_string}")
+      else
+        SubsonicBot::Subsonic.get_random_album
+      end
     end
 
     def help_string
@@ -96,16 +128,20 @@ module SubsonicBot
       if !params[:text]
         return slack_response_hash(help_string)
       end
-
-      input = params[:text].gsub(params[:trigger_word], "").strip
-
+      puts params
+      input = params[:text]
+      search_string = input.partition(" ").reject{ |s| s == " " || s == "" }
+      bot_command = search_string.shift
+      search_string = search_string.first
       # TODO: Improve error handling to pass on the actual error.
       begin
-        @output = case input
-        when "song"
-          get_random_song
-        when "album"
-          get_random_album
+        @output = case bot_command
+        when /^song/
+          get_song(search_string)
+        when /^album/
+          get_album(search_string)
+        when /^artist/
+          get_artist(search_string)
         else 
           help_string
         end
