@@ -21,7 +21,9 @@ module SubsonicBot
       cover_art = song["coverArt"]
 
       share_url = create_share(song["id"], description)
-
+      make_subsonic_call("jukeboxControl", "&action=clear")
+      make_subsonic_call("jukeboxControl", "&action=add&id=#{song["id"]}")
+      make_subsonic_call("jukeboxControl", "&action=start")
       "#{song["artist"]} - #{song["title"]}\n#{share_url}"
     end
 
@@ -29,7 +31,7 @@ module SubsonicBot
       res = make_subsonic_call("getAlbumList", "&size=1&type=random")
 
       album = res["subsonic-response"]["albumList"]["album"].first
-      album_description = "#{album["artist"].gsub(/[^0-9A-Za-z]/, '')}-#{album["title"].gsub(/[^0-9A-Za-z]/, '')}"
+      description = "#{album["artist"].gsub(/[^0-9A-Za-z]/, '')}-#{album["title"].gsub(/[^0-9A-Za-z]/, '')}"
 
       share_url = create_share(album["id"], description)
 
