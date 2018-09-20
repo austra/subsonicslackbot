@@ -111,8 +111,11 @@ module SubsonicBot
     end
 
     def help_string
-      help_string  = "To use Subsonic Bot try typing 'subsonic song (optional: song name)' or 'subsonic album (optional: artist)'\n"
-      help_string += "EX: subsonic artist Foo Fighters"
+      help_string  = "To use Subsonic Bot try typing:\n"
+      help_string += "subsonic song (optional: song name)\n"
+      help_string += "subsonic album (optional: artist)\n"
+      help_string += "subsonic artist (optional: artist)\n"
+      help_string += "subsonic song Evolution"
     end
 
     def slack_response_hash(output)
