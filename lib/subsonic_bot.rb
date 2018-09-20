@@ -116,7 +116,7 @@ module SubsonicBot
       help_string += "subsonic album (optional: artist)\n"
       help_string += "subsonic artist (optional: artist)\n"
       help_string += "subsonic song Evolution\n\n"
-      help_string += 'Login here "#{ENV['SUBSONIC_SERVER']}" with the username "#{ENV['USERNAME']}" to listen in!"
+      help_string += "Login here #{ENV['SUBSONIC_SERVER']} with the username #{ENV['USERNAME']} to listen in!"
     end
 
     def slack_response_hash(output)
