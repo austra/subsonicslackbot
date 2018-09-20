@@ -128,8 +128,8 @@ module SubsonicBot
       if !params[:text]
         return slack_response_hash(help_string)
       end
-      puts params
-      input = params[:text]
+
+      input = params[:text].gsub(params[:trigger_word], "").strip
       search_string = input.partition(" ").reject{ |s| s == " " || s == "" }
       bot_command = search_string.shift
       search_string = search_string.first
