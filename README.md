@@ -23,11 +23,15 @@ Login here {your_subsonic_server} with the username {your_username} to listen in
 
 Ensure your Subsonic server is accessible to the internet.  I use a noip dynamic DNS address.
 
-Create a new user.  If you want to share this account with others (so you can all listen to the same songs), I recommend only selecting this permission for the user.
+Create a new user.  If you want to share this account with others (so you can all listen to the same songs), I recommend only selecting the following permissions for the user.
 
 ```
 User is allowed to play files in jukebox mode
+User is allowed to share files with anyone
 ```
+
+***Currently, this user will also be able to create shares to anything on your Subsonic server.***
+TODO: Add separate jukebox credentials.
 
 ### Slack
 
