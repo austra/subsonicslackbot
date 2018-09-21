@@ -1,6 +1,6 @@
 # SubsonicSlackBot
 
-A Sinatra app for Slack integration with Subsonic.  Typing keywords in Slack will create a Subsonic share for a given song or album.  That share is sent to the channel.  Optionally, if your Subsonic user is configured for Jukebox mode, it will begin to play for anyone logged in with that user, fun for synchronized music listening!
+A Sinatra app for Slack integration with Subsonic.  Typing keywords in Slack will create a Subsonic share for a given song or album.  That share is sent to the channel.  Optionally, if your Subsonic user is configured for Jukebox mode, it will begin to playback directly on the server's audio hardware
 
 ## Usage
 Enter your trigger with no arguments in Slack for usage.
@@ -14,7 +14,6 @@ subsonic artist (optional: artist)
 
 subsonic song Evolution
 
-Login here {your_subsonic_server} with the username {your_username} to listen in!
 ```
 
 ## Deployment
@@ -23,15 +22,12 @@ Login here {your_subsonic_server} with the username {your_username} to listen in
 
 Ensure your Subsonic server is accessible to the internet.  I use a noip dynamic DNS address.
 
-Create a new user.  If you want to share this account with others (so you can all listen to the same songs), I recommend only selecting the following permissions for the user.
+Create a new user. Allow the following permissions.
 
 ```
-User is allowed to play files in jukebox mode
 User is allowed to share files with anyone
+User is allowed to play files in jukebox mode (optional)
 ```
-
-***Currently, this user will also be able to create shares to anything on your Subsonic server.***
-TODO: Add separate jukebox credentials.
 
 ### Slack
 
