@@ -1,7 +1,6 @@
 #ruby
 require 'bundler/setup'
 require 'sinatra'
-require 'typhoeus'
 require 'dotenv'
 require 'net/http'
 require 'uri'
@@ -13,8 +12,8 @@ Dotenv.load
 
 module SubsonicBot
   class Subsonic
-    def self.parse_response(res, response_object)
-      asset = res["subsonic-response"][response_object[:call]][response_object[:type]].sample
+    def self.parse_response(response, response_object)
+      asset = response["subsonic-response"][response_object[:call]][response_object[:type]].sample
       { 
         id:          asset["id"],
         artist:      asset["artist"],
@@ -24,10 +23,18 @@ module SubsonicBot
       }
     end
 
-    def self.play_on_jukebox(id)
+    def self.clear_playlist
       make_subsonic_call("jukeboxControl", "&action=clear")
-      make_subsonic_call("jukeboxControl", "&action=add&id=#{id}")
+    end
+
+    def self.start_playlist
       make_subsonic_call("jukeboxControl", "&action=start")
+    end
+
+    def self.play_on_jukebox(id)
+      clear_playlist
+      make_subsonic_call("jukeboxControl", "&action=add&id=#{id}")
+      start_playlist
     end
 
     def self.get_random_song
@@ -47,37 +54,37 @@ module SubsonicBot
     end
 
     def self.create_share(asset_id, asset_description)
-      res = make_subsonic_call("createShare", "&id=#{asset_id}&description=#{asset_description}")
+      response = make_subsonic_call("createShare", "&id=#{asset_id}&description=#{asset_description}")
 
-      share = res["subsonic-response"]["shares"]["share"].first
+      share = response["subsonic-response"]["shares"]["share"].first
       share["url"]
     end
 
-    def self.search(type, options)
-      asset = parse_response(make_subsonic_call("search", options), {type: "match", call: "searchResult"})
+    def self.search(type, query_params)
+      asset = parse_response(make_subsonic_call("search", query_params), {type: "match", call: "searchResult"})
       share_url = create_share(asset[:id], asset[:description])
       play_on_jukebox(asset[:id])
 
       "#{asset[:artist]} - #{asset[:title]}\n#{share_url}"
     end
 
-    def self.make_subsonic_call(call_name, options=nil)
+    def self.make_subsonic_call(call_name, query_params=nil)
       server   = "#{ENV["SUBSONIC_SERVER"]}"
       version  = "#{ENV['VERSION']}"
       client   = "#{ENV['CLIENT']}"
       username = "#{ENV['USERNAME']}"
       password = "#{ENV['PASSWORD']}"
-      salt     = "#{ENV['SALT']}"
+      salt     = Digest::SHA1.hexdigest([Time.now, rand].join)
       token    = Digest::MD5.hexdigest(password + salt)
 
       location  = "#{server}/rest/#{call_name}.view?u=#{username}&t=#{token}&s=#{salt}&v=#{version}&c=#{client}&f=json"
-      location += options
+      location += query_params
 
       uri = URI.parse(location)
-      req = Net::HTTP::Get.new(uri.to_s)
-      res = Net::HTTP.start(uri.host, uri.port) { |http| http.request(req) }
+      request  = Net::HTTP::Get.new(uri.to_s)
+      response = Net::HTTP.start(uri.host, uri.port) { |http| http.request(request) }
 
-      JSON.parse(res.body)
+      JSON.parse(response.body)
     end
   end
 
@@ -137,6 +144,7 @@ module SubsonicBot
       search_string = input.partition(" ").reject{ |s| s == " " || s == "" }
       bot_command = search_string.shift
       search_string = search_string.first
+      
       # TODO: Improve error handling to pass on the actual error.
       begin
         @output = case bot_command
