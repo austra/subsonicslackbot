@@ -19,6 +19,16 @@ Login here {your_subsonic_server} with the username {your_username} to listen in
 
 ## Deployment
 
+### Subsonic
+
+Ensure your Subsonic server is accessible to the internet.  I use a noip dynamic DNS address.
+
+Create a new user.  If you want to share this account with others (so you can all listen to the same songs), I recommend only selecting this permission for the user.
+
+```
+User is allowed to play files in jukebox mode
+```
+
 ### Slack
 
 Create an outgoing webhook.  You will need the token for your environment variables.  Use your Heroku address as the URL, with this endpoint:
